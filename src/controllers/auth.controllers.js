@@ -1,9 +1,10 @@
 const userModel = require('../models/user.models');
 const bcrypt = require('bcryptjs');
+const emailService = require('../services/email.services');
 const jwt = require('jsonwebtoken');
  const registerUser = async  (req,res)=>{
   const {email,password,name} = req.body;
-  console.log(name,email,password);
+  
   const isExists = await userModel.findOne({email:email});
   if(isExists){
     return res.status(422).json({
@@ -15,17 +16,19 @@ const jwt = require('jsonwebtoken');
   const user =await userModel.create({
     email,password,name
   })
-  const token = jwt.sign({useId:user.id}, process.env.SECRET_KEY,{
+  const token = jwt.sign({userId:user._id}, process.env.SECRET_KEY,{
     expiresIn:"3d"
   })
   res.cookie("token",token);
-  return res.status(201).json({
+   res.status(201).json({
     message:"Account created successfully",
     status:"success",
     token,
     user,
 
   })
+  await emailService.sendRegistrationEmail(user.email,user.name);
+  return;
 };
 
 const loginUser = async (req,res)=>{
@@ -62,5 +65,4 @@ return res.status(200).json({
  module.exports={
   registerUser,
   loginUser,
-
- }
+}
