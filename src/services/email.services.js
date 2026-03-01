@@ -9,6 +9,7 @@ apiKey.apiKey = process.env.BREVO_API_KEY;
 const transactionalEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
 const sendEmail = async (to, subject, text, html) => {
+  console.log(`Sending email to: ${to}, subject: ${subject}`);
   try {
     await transactionalEmailApi.sendTransacEmail({
       sender: {
@@ -23,7 +24,7 @@ const sendEmail = async (to, subject, text, html) => {
 
     console.log("✅ Email sent via Brevo");
   } catch (error) {
-    console.error("❌ Brevo email error:", error.message);
+    console.error("❌ Brevo email error:", error.message || error);
   }
 };
 
@@ -54,8 +55,16 @@ We're excited to have you on board 🚀
 
   await sendEmail(to, subject, text, html);
 };
+const sendTransactionEmail = async (to, amount, transactionId, type) => {
+  const subject = type === "DEBIT" ? "Transaction Alert: Amount Debited" : "Transaction Alert: Amount Credited";
+  const text = type === "DEBIT" ? `An amount of ${amount} has been debited from your account. Transaction ID: ${transactionId}`: `An amount of ${amount} has been credited to your account. Transaction ID: ${transactionId}`;
+  const html = type === "DEBIT" ? `<p>An amount of <strong>${amount}</strong> has been debited from your account. Transaction ID: <strong>${transactionId}</strong></p>` : `<p>An amount of <strong>${amount}</strong> has been credited to your account. Transaction ID: <strong>${transactionId}</strong></p>`;
+
+  await sendEmail(to, subject, text, html);
+};
 
 module.exports = {
   sendEmail,
   sendRegistrationEmail,
+  sendTransactionEmail
 };

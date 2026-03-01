@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const emailService = require('../services/email.services');
 const accountModel = require('../models/account.model');
 const jwt = require('jsonwebtoken');
+const blacklistModel = require('../models/blacklist.model');
  const registerUser = async  (req,res)=>{
   const {email,password,name} = req.body;
   
@@ -93,9 +94,23 @@ async function fetchBalance(req,res){
     balance:balance
   })
 }
+async function logout(req,res){
+  const token = req.cookies.token || req.header("Authorization").split(" ")[1];
+  if(!token){
+    return res.status(400).json({
+      message:"Already logged out or token not provided"
+    })
+  }
+  res.clearCookie("token");
+  await blacklistModel.create({token});
+  return res.status(200).json({
+    message:"Logout successful"
+  })
+}
  module.exports={
   registerUser,
   loginUser,
   getUserAccount,
   fetchBalance,
+  logout
 }

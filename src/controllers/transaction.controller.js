@@ -32,9 +32,8 @@ async function createTransaction(req,res){
   })
 
 }
-const fromUserAccount = await accountModel.findById(fromAccount);
-
-const toUserAccount = await accountModel.findById(toAccount);
+const fromUserAccount = await accountModel.findById(fromAccount).populate("user");
+const toUserAccount = await accountModel.findById(toAccount).populate("user");
 if(!toUserAccount || !fromUserAccount){
   return res.status(404).json({
     message:"Any of or both accounts not found"
@@ -84,6 +83,7 @@ if(balance < amount){
 
 }
 //5.Create transaction with pending status
+try{
 const session = await mongoose.startSession();
 session.startTransaction();
 const [transaction] = await transactionModel.create([{
@@ -93,37 +93,47 @@ const [transaction] = await transactionModel.create([{
   idempotencyKey,
   status:"PENDING"
 }],{session})
-const debitLedgerEntry = await ledgerModel.create({
+const debitLedgerEntry = await ledgerModel.create([{
   account:fromAccount,
   amount,
   transaction:transaction._id,
   type:"DEBIT",
-},{session})
-const creditLedgerEntry = await ledgerModel.create({
+}],{session})
+
+//real time simulation of transaction processing delay
+await (() => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 10000);
+  });
+})();
+
+const creditLedgerEntry = await ledgerModel.create([{
 account:toAccount,
 amount,
 transaction:transaction._id,
 type:"CREDIT"
-},{session})
-transaction.status = "COMPLETED";
-await transaction.save({session});
+}],{session})
+const updatedTransaction = await transactionModel.findByIdAndUpdate(transaction._id,{status:"COMPLETED"},{session});
 await session.commitTransaction();
 await session.endSession();
 //10.Send email notification to sender and receiver
-emailService.sendEmail({
-  to:fromUserAccount.user.email,
-  subject:"Transaction Alert: Amount Debited",
-  text:`An amount of ${amount} has been debited from your account. Transaction ID: ${transaction._id}`
-})
-emailService.sendEmail({
-  to:toUserAccount.user.email,
-  subject:"Transaction Alert: Amount Credited",
-  text:`An amount of ${amount} has been credited to your account. Transaction ID: ${transaction._id}`
-})
+emailService.sendTransactionEmail(fromUserAccount.user.email,amount,transaction._id,"DEBIT");
+emailService.sendTransactionEmail(toUserAccount.user.email,amount,transaction._id,"CREDIT");
 return res.status(201).json({
   message:"Transaction completed successfully",
-  transaction
+  transaction:updatedTransaction
 })
+}catch(error){
+  await session.abortTransaction();
+  session.endSession();
+
+  return res.status(500).json({
+    message: "Transaction failed",
+    error: error.message
+  });
+}
+
+
 };
 
 
@@ -172,6 +182,7 @@ if(existingTransaction.status === "COMPLETED"){
 }
 }
 //3.Create transaction with pending status
+try{
 const session = await mongoose.startSession();
 session.startTransaction();
 console.log(idempotencyKey)
@@ -195,24 +206,26 @@ const debitLedgerEntry = await ledgerModel.create([{
   transaction:transaction._id,
   type:"DEBIT"
 }],{session})
-transaction.status = "COMPLETED";
+await transactionModel.findByIdAndUpdate(transaction._id,{status:"COMPLETED"},{session});
 await transaction.save({session});
 await session.commitTransaction();
 session.endSession();
 //10.Send email notification to receiver
-
-console.log(`To user email: ${toUserAccount.user.email}`)
-console.log(`Amount: ${amount}, Transaction ID: ${transaction._id}`);
-emailService.sendEmail({
-  to:toUserAccount.user.email,
-  subject:"Initial Funds Alert: Amount Credited",
-  text:`An amount of ${amount} has been credited to your account. Transaction ID: ${transaction._id}`,
-  html:`<p>An amount of <strong>${amount}</strong> has been credited to your account. Transaction ID: <strong>${transaction._id}</strong></p>`
-})
+emailService.sendTransactionEmail(toUserAccount.user.email,amount,transaction._id,"CREDIT");
 return res.status(201).json({
   message:"Initial funds transaction completed successfully",
   transaction
 })
+}catch(error){
+  await session.abortTransaction();
+  session.endSession();
+
+  return res.status(500).json({
+    message: "Transaction failed",
+    error: error.message
+  });
+}
+
 };
 
 
