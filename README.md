@@ -1,59 +1,123 @@
-Backend Ledger System (Banking Ledger API)
+# Ledger-Based Transaction Engine
 
-A Node.js + MongoDB backend ledger system that manages accounts, transactions, and real-time balance calculation using MongoDB Aggregation.
-This project simulates core banking ledger operations such as debit, credit, and balance tracking.
+A **pure backend**, ledger-driven financial transaction system inspired by how real banking systems manage money internally.  
+Balances are **never stored directly** — they are derived from immutable **CREDIT / DEBIT ledger entries**, ensuring correctness, auditability, and safety.
 
-🚀 Features
+This project intentionally focuses on **backend correctness and system design**, without a frontend.
 
-🧾 Account-based ledger system
+---
 
-➕ Credit & ➖ Debit transactions
+## 🔑 Core Concepts
 
-📊 Real-time balance calculation using MongoDB aggregation
+- Ledger-based accounting (double-entry style)
+- Atomic money transfers using MongoDB transactions
+- Idempotent APIs to safely handle retries
+- System-controlled funding account
+- Balance derived from ledger (not stored)
 
-🔐 JWT-based authentication
+---
 
-🧠 Clean MVC architecture
+## 🏗 Architecture Overview
+Client (Postman / API Consumer)
+↓
+Authentication (JWT)
+↓
+Transaction Service
+↓
+Ledger Engine
+↓
+MongoDB (Transactions + Sessions)
 
-⚠️ Centralized error handling
+The system is **UI-agnostic** and designed as a reusable backend service.
 
-📈 Scalable and database-optimized logic
+---
 
+## ⚙️ Tech Stack
 
-🛠️ Tech Stack
+- Node.js
+- Express.js
+- MongoDB + Mongoose
+- MongoDB Transactions (Sessions)
+- JWT Authentication
+- Aggregation Pipelines
+- Postman (API testing)
 
-Backend: Node.js, Express.js
+---
 
-Database: MongoDB, Mongoose
+## 📦 Data Model Overview
 
-Authentication: JWT
+### Account
+- Represents a user or system-owned account
+- Does NOT store balance
+- Balance is derived from ledger entries
 
+### Transaction
+- Represents a transfer intent
+- Status-driven lifecycle:
+  - `PENDING`
+  - `COMPLETED`
+  - `FAILED`
+  - `CANCELED`
+- Enforced idempotency using `idempotencyKey`
 
+### Ledger
+- Immutable record of money movement
+- Each transaction creates:
+  - One **DEBIT** entry
+  - One **CREDIT** entry
 
-Architecture: MVC Pattern
+---
 
-Other Tools: Postman, Git
- 
+## 🔄 Transaction Flow (Transfer)
 
- 📈 Future Improvements
+1. Validate request
+2. Validate idempotency key
+3. Verify account status
+4. Derive sender balance from ledger
+5. Create transaction with `PENDING` status
+6. Create **DEBIT** ledger entry (sender)
+7. Create **CREDIT** ledger entry (receiver)
+8. Mark transaction as `COMPLETED`
+9. Commit MongoDB transaction
+10. Send email notifications
 
-Transaction rollback support
+All steps are executed atomically.
 
-Monthly statement generation
+---
 
-Pagination for ledger entries
+## 🔁 Idempotency Design
 
-Role-based access control
+- Each transaction request includes an `idempotencyKey`
+- Repeated requests with the same key return the same result
+- Prevents duplicate transfers during retries or network failures
 
-Redis caching for balance reads
+This design is inspired by **Stripe-style idempotent APIs**.
 
+---
 
+## 🔐 System Account Design
 
-👨‍💻 Author
+Initial funding does not originate from a user account.
 
-Nishchaya
-Backend Developer | Node.js | MongoDB | System Design
+Instead, the system uses a **dedicated system account**:
+- Acts as the source for initial deposits
+- Ensures every ledger entry has a valid debit and credit
+- Mirrors real-world banking clearing accounts
 
-⭐ If you like this project
+---
 
-Give it a ⭐ and feel free to fork or contribute!
+## 📡 API Endpoints
+
+### Authentication
+POST /api/auth/register
+POST /api/auth/login
+
+### Accounts
+POST /api/accounts/create
+GET /api/accounts/fetch-balance/:accountId
+GET /api/accounts/get-user-accounts
+
+### Transactions
+
+POST /api/transactions/initial-fund
+POST /api/transactions/transfer
