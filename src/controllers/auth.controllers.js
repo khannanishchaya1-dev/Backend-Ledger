@@ -1,6 +1,7 @@
 const userModel = require('../models/user.models');
 const bcrypt = require('bcryptjs');
 const emailService = require('../services/email.services');
+const accountModel = require('../models/account.model');
 const jwt = require('jsonwebtoken');
  const registerUser = async  (req,res)=>{
   const {email,password,name} = req.body;
@@ -60,9 +61,41 @@ return res.status(200).json({
 })
   };
 
+  async function getUserAccount(req,res){
+  const user = req.user;
+  const account = await accountModel.find({user:user._id});
+  if(account.length === 0){
+    return res.status(404).json({
+      message:"No account found for user"
+    })
+  }
+  return res.status(200).json({
+    message:"User account retrieved successfully",
+    account
+  })
+}
 
- 
+async function fetchBalance(req,res){
+  const user = req.user;
+  
+  const {accountId}= req.params;
+  console.log(`Fetching balance for account ID: ${accountId} and user ID: ${user._id}`);
+  const account = await accountModel.findOne({_id:accountId,user:user._id});
+  if(!account){
+    return res.status(404).json({
+      message:"Account not found"
+    })
+  }
+  const balance = await account.getBalance();
+  console.log(`Calculated balance for account ID ${accountId}: ${balance}`);
+  return res.status(200).json({
+    message:"Account balance retrieved successfully",
+    balance:balance
+  })
+}
  module.exports={
   registerUser,
   loginUser,
+  getUserAccount,
+  fetchBalance,
 }

@@ -33,3 +33,27 @@ Authentication: JWT
 Architecture: MVC Pattern
 
 Other Tools: Postman, Git
+ 
+
+ 📈 Future Improvements
+
+Transaction rollback support
+
+Monthly statement generation
+
+Pagination for ledger entries
+
+Role-based access control
+
+Redis caching for balance reads
+
+
+
+👨‍💻 Author
+
+Nishchaya
+Backend Developer | Node.js | MongoDB | System Design
+
+⭐ If you like this project
+
+Give it a ⭐ and feel free to fork or contribute!

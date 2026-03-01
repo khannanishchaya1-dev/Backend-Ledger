@@ -23,6 +23,12 @@ unique:[true,"Account already exists"],
     minLength:[6,"Password should be more than 6 characters"],
     select:false
 
+  },
+  systemUser:{
+    type:Boolean,
+    default:false,
+    immutable:true,
+    select:false,
   }
 
   },{
