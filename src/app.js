@@ -48,7 +48,7 @@ app.get("/", (req, res) => {
     },
     documentation: {
       readme: "See README.md in repository",
-      postman: "/postman/ledger-api.postman_collection.json"
+      postman: "https://www.postman.com/khannanishchaya1-9321013/workspace/backend-ledger/collection/49447750-e739dd06-e728-470c-9b0c-1988b242d96c?action=share&creator=49447750"
     },
     timestamp: new Date().toISOString()
   });
