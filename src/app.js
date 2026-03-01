@@ -16,6 +16,9 @@ const transactionRouter = require('./routes/transaction.routes');
 app.use("/api/auth",authRouter);
 app.use("/api/accounts",accRouter);
 app.use("/api/transactions",transactionRouter);
+app.get("/",(req,res)=>{
+  res.send("Welcome to the Ledger API");
+});
 
 
 
