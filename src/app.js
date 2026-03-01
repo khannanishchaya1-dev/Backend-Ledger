@@ -34,14 +34,15 @@ app.get("/", (req, res) => {
         "POST /api/auth/register",
         "POST /api/auth/login",
         "POST /api/auth/logout",
+        
       ],
       accounts: [
         "POST /api/accounts/create",
-        "GET /api/accounts/fetch-balance/:accountId",
-        "GET /api/accounts/get-user-accounts"
+        "GET /api/auth/fetch-balance/:accountId",
+        "GET /api/auth/get-user-accounts"
       ],
       transactions: [
-        "POST /api/transactions/initial-fund",
+        "POST /api/transactions/system/initial-funds",
         "POST /api/transactions/transfer"
       ]
     },
