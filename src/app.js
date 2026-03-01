@@ -32,11 +32,13 @@ app.get("/", (req, res) => {
     apiEndpoints: {
       auth: [
         "POST /api/auth/register",
-        "POST /api/auth/login"
+        "POST /api/auth/login",
+        "POST /api/auth/logout",
       ],
       accounts: [
-        "POST /api/accounts",
-        "GET /api/accounts/:id/balance"
+        "POST /api/accounts/create",
+        "GET /api/accounts/fetch-balance/:accountId",
+        "GET /api/accounts/get-user-accounts"
       ],
       transactions: [
         "POST /api/transactions/initial-fund",
