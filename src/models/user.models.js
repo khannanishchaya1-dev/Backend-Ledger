@@ -24,6 +24,10 @@ unique:[true,"Account already exists"],
     select:false
 
   },
+  address:{
+    type:String,
+    required:[true,"Address is required for creating account"],
+  },
   systemUser:{
     type:Boolean,
     default:false,

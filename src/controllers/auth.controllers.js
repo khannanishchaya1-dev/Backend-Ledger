@@ -5,7 +5,9 @@ const accountModel = require('../models/account.model');
 const jwt = require('jsonwebtoken');
 const blacklistModel = require('../models/blacklist.model');
  const registerUser = async  (req,res)=>{
-  const {email,password,name} = req.body;
+  const {email,password,name,address} = req.body;
+
+  
   
   const isExists = await userModel.findOne({email:email});
   if(isExists){
@@ -16,8 +18,9 @@ const blacklistModel = require('../models/blacklist.model');
     })
   }
   const user =await userModel.create({
-    email,password,name
+    email,password,name,address
   })
+  console.log("User created:", user);
   const token = jwt.sign({userId:user._id}, process.env.SECRET_KEY,{
     expiresIn:"3d"
   })
@@ -70,14 +73,25 @@ return res.status(200).json({
       message:"No account found for user"
     })
   }
+  const accountData = await Promise.all(account.map(async (acc) => {
+const accObject = acc.toObject();
+const balance = await acc.getBalance();
+return {
+  ...accObject,
+balance
+}
+  }));
+  console.log("User accounts with balance:", accountData);
+
   return res.status(200).json({
     message:"User account retrieved successfully",
-    account
+    account: accountData
   })
 }
 
 async function fetchBalance(req,res){
   const user = req.user;
+  console.log(`User ${user._id} is fetching balance for account ${req.params.accountId}`);
   
   const {accountId}= req.params;
   console.log(`Fetching balance for account ID: ${accountId} and user ID: ${user._id}`);
@@ -106,6 +120,7 @@ async function logout(req,res){
   return res.status(200).json({
     message:"Logout successful"
   })
+  
 }
  module.exports={
   registerUser,

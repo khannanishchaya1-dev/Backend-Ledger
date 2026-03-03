@@ -6,5 +6,6 @@ router.post("/transfer",authMiddleware,transactionController.createTransaction);
 
 //1.Create initial funds transaction from system account to user account
 router.post("/system/initial-funds",systemAuthMiddleware,transactionController.createInitialFundsTransaction);
+router.get("/all",authMiddleware,transactionController.getAllTransactions);
 
 module.exports=router;
